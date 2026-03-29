@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.idea/
 
 # IPython
 profile_default/
@@ -216,5 +217,12 @@ __marimo__/
 .streamlit/secrets.toml
 
 *.npy
-
-data/
+artifacts/private/
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.log
+report/*.out
+report/*.pdf
+data/*
+!data/README.md

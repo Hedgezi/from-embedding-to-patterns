@@ -1,0 +1,9 @@
+bertopic>=0.16
+hdbscan>=0.8
+jupyter>=1.0
+matplotlib>=3.8
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.5
+sentence-transformers>=3.0
+umap-learn>=0.5
