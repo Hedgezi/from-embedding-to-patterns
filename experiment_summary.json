@@ -1,0 +1,75 @@
+{
+  "dataset": {
+    "messages_before_filtering": 42698,
+    "messages_after_filtering": 32738,
+    "unique_authors": 19,
+    "language": "Russian",
+    "source": "private Telegram group chat",
+    "release_policy": "code_only"
+  },
+  "experiments": [
+    {
+      "method": "kmeans_k100",
+      "display_name": "K-Means (k=100)",
+      "num_clusters": 100,
+      "noise_messages": 0,
+      "cluster_size_median": 264.0,
+      "cluster_size_mean": 327.38,
+      "observation": "Readable baseline, but mostly broad semantic themes."
+    },
+    {
+      "method": "hdbscan_raw",
+      "display_name": "HDBSCAN on raw embeddings",
+      "num_clusters": 469,
+      "noise_messages": 28631,
+      "cluster_size_median": 7.0,
+      "cluster_size_mean": 8.76,
+      "observation": "Very conservative in the original embedding space."
+    },
+    {
+      "method": "umap_hdbscan",
+      "display_name": "UMAP + HDBSCAN",
+      "num_clusters": 1378,
+      "noise_messages": 9961,
+      "cluster_size_median": 10.0,
+      "cluster_size_mean": 16.53,
+      "observation": "Much better coverage, but still fragmented."
+    },
+    {
+      "method": "bertopic_hdbscan",
+      "display_name": "BERTopic (UMAP + HDBSCAN)",
+      "num_clusters": 1438,
+      "noise_messages": 10549,
+      "cluster_size_median": 10.0,
+      "cluster_size_mean": 15.43,
+      "observation": "Improves inspectability more than clustering quality."
+    },
+    {
+      "method": "dbscan_eps_0.01",
+      "display_name": "DBSCAN after UMAP (eps=0.01)",
+      "num_clusters": 953,
+      "noise_messages": 25196,
+      "cluster_size_median": 5.0,
+      "cluster_size_mean": 7.91,
+      "observation": "More localized clusters with some topic leakage."
+    },
+    {
+      "method": "dbscan_eps_0.005",
+      "display_name": "DBSCAN after UMAP (eps=0.005)",
+      "num_clusters": 602,
+      "noise_messages": 28405,
+      "cluster_size_median": 4.0,
+      "cluster_size_mean": 7.2,
+      "observation": "Best trade-off between specificity and interpretability."
+    },
+    {
+      "method": "dbscan_eps_0.001",
+      "display_name": "DBSCAN after UMAP (eps=0.001)",
+      "num_clusters": 175,
+      "noise_messages": 31407,
+      "cluster_size_median": 5.0,
+      "cluster_size_mean": 7.61,
+      "observation": "Too restrictive and dominated by trivial short reactions."
+    }
+  ]
+}

@@ -1,184 +1,175 @@
 \documentclass{bmvc2k}
 
-%% Enter your paper number here for the review copy
-% \bmvcreviewcopy{??}
+\usepackage{graphicx}
+\usepackage{booktabs}
 
-\title{From Embeddings to Patterns: \\ Clustering Recurrent Content in Group Chats }
+\title{From Embeddings to Recurrent Patterns:\\
+A Research Portfolio Note on Unsupervised Chat Clustering}
 
-% Enter the paper's authors in order
 \addauthor{Bc. Mykola Vorontsov}{m.vorontsov@campus.tu-berlin.de}{1}
-% \addauthor{Susan Student}{http://www.vision.inst.ac.uk/~ss}{1}
-% \addauthor{Petra Prof}{http://www.vision.inst.ac.uk/~pp}{1}
-% \addauthor{Colin Collaborator}{colin@collaborators.com}{2}
-
-% Enter the institutions
 \addinstitution{TU Berlin\\Berlin-Charlottenburg, Germany}
-% \addinstitution{
-%  The Vision Institute\\
-%  University of Borsetshire\\
-%  Wimbleham, UK
-% }
-% \addinstitution{
-%  Collaborators, Inc.\\
-%  123 Park Avenue,\\
-%  New York, USA
-% }
 
-\runninghead{Vorontsov}{From Embeddings to Patterns}
+\runninghead{Vorontsov}{Embeddings to Recurrent Patterns}
 
-% Any macro definitions you would like to include
-% These are not defined in the style file, because they don't begin
-% with \bmva, so they might conflict with the user's own macros.
-% The \bmvaOneDot macro adds a full stop unless there is one in the
-% text already.
 \def\eg{\emph{e.g}\bmvaOneDot}
 \def\Eg{\emph{E.g}\bmvaOneDot}
 \def\etal{\emph{et al}\bmvaOneDot}
 
-%-------------------------------------------------------------------------
-% Document starts here
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-This document demonstrates the format requirements for papers submitted
-to the British Machine Vision Conference.  The format is designed for
-easy on-screen reading, and to print well at one or two pages per sheet.
-Additional features include: pop-up annotations for
-citations~\cite{Authors06,Mermin89}; a margin ruler for reviewing; and a
-greatly simplified way of entering multiple authors and institutions.
-
-{\bf All authors are encouraged to read this document}, even if you have
-written many papers before.  As well as a description of the format, the
-document contains many instructions relating to formatting problems and
-errors that are common even in the work of authors who {\em have}
-written many papers before.
+This note documents a portfolio-style machine learning project on unsupervised discovery of recurring phrase-like and topic-like patterns in a private Russian Telegram group chat. The practical motivation is to understand whether short informal messages form dense semantic neighborhoods in sentence-embedding space, and whether those neighborhoods can recover repeated conversational expressions beyond broad topics. We compare K-Means, HDBSCAN on raw embeddings, UMAP followed by HDBSCAN, BERTopic, and DBSCAN with explicit radius control. The main result is qualitative but consistent: density-based methods become substantially more useful after dimensionality reduction, and DBSCAN provides the clearest control over the trade-off between broad thematic clusters and narrow recurring expressions. At the same time, the project remains deliberately honest about its limits: the dataset is private, the evaluation is partly qualitative, and temporal trend detection is not yet solved well enough to be claimed as a finished contribution.
 \end{abstract}
 
-%-------------------------------------------------------------------------
 \section{Introduction}
 \label{sec:intro}
 
-Informal group chats have become a primary medium of everyday communication, where users frequently share short messages, jokes, and recurring expressions. Within such conversations, certain phrases or semantic patterns reappear over time and may temporarily dominate discussion. Detecting these recurring patterns is challenging due to the noisy, unstructured, and highly dynamic nature of chat data. \\
-Traditional clustering methods are not well suited for this setting. Chat messages are typically short, diverse, and often include slight variations of the same expression, making it difficult to group them using simple lexical or syntactic similarity. At the same time, the number and structure of recurring patterns are unknown in advance, which limits the applicability of methods that require predefined cluster counts. \\
-In this work, we approach this problem from an unsupervised perspective using sentence embeddings and clustering methods. We hypothesize that recurring patterns in chat data correspond to dense regions in the embedding space, where semantically similar messages appear frequently. Under this assumption, density-based clustering methods are particularly suitable, as they can capture clusters of arbitrary shape and identify noise. \\
-We systematically evaluate several clustering approaches, including K-Means as a baseline, HDBSCAN and DBSCAN as density-based methods, and BERTopic as a higher-level pipeline combining dimensionality reduction, clustering, and topic representation. We also investigate the role of dimensionality reduction using UMAP in improving clustering performance in high-dimensional embedding spaces. \\
-Our experiments on a real-world chat dataset show that standard clustering approaches either produce overly coarse groupings or fail to capture a significant portion of the data. In contrast, density-based methods combined with dimensionality reduction are better suited for identifying locally dense semantic patterns, although challenges such as cluster fragmentation remain. \\
-The main contributions of this work are as follows:
+Informal group chats contain many recurring linguistic behaviors: exact repeated phrases, lightly varied catchphrases, narrow in-group templates, and also many generic conversational fillers. The distinction matters. A useful system for recurring-content discovery should surface the first two categories more reliably than the last one.
+
+This repository studies that problem as an unsupervised clustering task on sentence embeddings. The aim is not to present a finished conference paper, but to document a careful research workflow and its current conclusions. The framing was therefore narrowed from ``meme/trend detection'' to a more defensible goal: \emph{discovery of recurring phrase-like and topic-like patterns in short chat messages}. This narrower formulation matches what the current experiments can genuinely support.
+
+The project uses a private Telegram export, multilingual sentence embeddings, and several clustering pipelines. The central working hypothesis is that repeated conversational patterns occupy locally dense regions in embedding space, while unrelated short messages appear as sparse noise. Density-based clustering is therefore a natural fit, but only if the geometry of the embedding space is suitable for neighborhood-based reasoning.
+
+The main contributions of the current repository version are:
 \begin{itemize}
-    \item We formulate the problem of detecting recurring patterns in informal chat data as an unsupervised clustering task.
-    \item We propose a density-based interpretation of such patterns as compact regions in embedding space.
-    \item We provide a comparative analysis of multiple clustering pipelines on real-world chat data.
-    \item We analyze the impact of dimensionality reduction and clustering parameters on the structure and interpretability of the resulting clusters.
+    \item a clean and reproducible experiment pipeline for comparing baseline and density-based clustering methods;
+    \item a public, code-only portfolio packaging that avoids releasing private chat data;
+    \item a more honest problem statement aligned with what the experiments actually demonstrate;
+    \item a lightweight qualitative evaluation protocol for auditing whether recovered clusters are phrase-like, topic-like, generic conversational, or artifact-heavy.
 \end{itemize}
 
 \section{Related Work}
 
-\section{Methodology}
+The project sits at the intersection of sentence embeddings, density-based clustering, and neural topic modeling. Sentence-BERT-style embeddings provide a practical way to map semantically related short utterances into a shared vector space~\cite{reimers2019sentencebert}. This is particularly useful for chat data, where lexical overlap alone is often too brittle because repeated expressions may appear with spelling variation, slang, or paraphrase.
 
-\subsection{Data}
+For clustering, the comparison focuses on methods with different inductive biases. K-Means offers a simple baseline, but it assumes approximately spherical clusters and requires a predefined number of clusters. DBSCAN~\cite{ester1996dbscan} and HDBSCAN~\cite{campello2015hdbscan} instead define clusters through local density, making them better suited to irregular neighborhoods and noise-heavy datasets. In practice, however, density estimation can become unstable in high-dimensional embedding spaces.
+
+UMAP~\cite{mcinnes2018umap} is therefore used as a geometry-shaping step before density-based clustering. Its role here is pragmatic rather than theoretical: preserving enough local structure that repeated conversational patterns become easier to isolate. BERTopic~\cite{grootendorst2022bertopic} is included not because the task is classical topic modeling, but because it provides a convenient integrated workflow around embeddings, dimensionality reduction, clustering, and topic representation.
+
+This project differs from standard topic-modeling use cases in one important way: the target phenomena are often narrower than topics. Some clusters correspond to recognizable discussion themes, but the more interesting cases are repeated phrase templates and conversational catchphrases. That is precisely why a qualitative audit remains necessary.
+
+\section{Data and Public Release Constraints}
 \label{sec:data}
 
-The dataset consists of messages extracted from a private Telegram group chat of approximately 17 participants over a period of 6 months. The messages are in Russian. \\
-The initial dataset contains 42,968 messages. After filtering out non-text content (images, videos, audio) and short messages (less than 5 characters), 32,738 text messages remain. Short messages were removed due to their limited semantic content for embedding-based analysis.
+The underlying dataset consists of messages extracted from a private Telegram group chat with 19 distinct authors visible in the processed export over a period of six months. The messages are predominantly in Russian. The original export contains 42{,}698 entries. After filtering to text messages and removing empty or very short content, 32{,}738 messages remain for analysis.
 
-\subsection{Embeddings}
+Because the source material is private, the public repository is intentionally code-only. It does not include:
+\begin{itemize}
+    \item the Telegram export itself,
+    \item user identifiers,
+    \item media files,
+    \item raw message quotations.
+\end{itemize}
 
-Sentence embeddings were computed using the \texttt{sentence-transformers} library with the \texttt{paraphrase-multilingual-MiniLM-L12-v2} model. This model was selected due to its strong performance in multilingual semantic similarity tasks and its support for the Russian language.
-The model produces dense vector representations of sentences, allowing a semantic similarity comparison between messages, which is essential for clustering semantically related content.
+Public artifacts therefore contain only aggregate metrics, paraphrased illustrative descriptions, and documentation of the experiment pipeline. This is a core design decision of the repository, not a temporary omission.
 
-\subsection{Clustering Methods}
+\section{Methodology}
 
-Several clustering approaches are considered. As a baseline, K-Means is used due to its simplicity and widespread adoption.
-In addition, density-based clustering methods are explored, including HDBSCAN and DBSCAN. These methods are particularly suitable for detecting clusters of arbitrary shape and handling noise, which is expected in informal chat data.
-HDBSCAN is used as a hierarchical density-based approach requiring minimal parameter tuning, while DBSCAN is evaluated as a more controllable alternative with explicit density thresholds.
+\subsection{Preprocessing and Embeddings}
 
-\subsection{Patterns}
+Messages are filtered to entries with type \texttt{message}, converted into plain text, and trimmed to a minimum cleaned length of six characters. This threshold is a pragmatic compromise: it removes a large amount of trivial noise, but it also risks discarding some genuine short recurring expressions. The note therefore treats this preprocessing choice as a limitation rather than as an optimal design.
 
-In this work, a “meme” or “trend” is defined as a recurring semantic pattern in messages, which may manifest as repeated phrases, paraphrased expressions, or variations of a common concept.
-Such patterns may appear as exact repetitions (\eg, copied text) or as semantically similar variations with minor lexical differences.
-For example, references to a specific entity may vary slightly in wording (\eg, synonymous or closely related expressions), while still representing the same underlying concept.
-The objective of clustering is to group such semantically related messages into coherent clusters, even in the presence of noise and linguistic variation.
+Sentence embeddings are computed with the multilingual model \texttt{paraphrase-multilingual-MiniLM-L12-v2}. The model is chosen because it supports Russian and provides a practical semantic representation for short informal messages.
 
-\subsection{Pipeline}
+\subsection{Clustering Pipelines}
 
-The prepared pipeline consists of the following steps:
+The canonical experiment pipeline contains four entrypoints in the repository CLI:
 \begin{enumerate}
-    \item text preprocessing and filtering,
-    \item embedding computation,
-    \item clustering of embeddings,
-    \item analysis of resulting clusters.
+    \item \texttt{preprocess}: summarize filtering and dataset size;
+    \item \texttt{baseline}: run K-Means baselines;
+    \item \texttt{density}: run HDBSCAN, UMAP + HDBSCAN, BERTopic, and DBSCAN sweeps;
+    \item \texttt{report}: export the full private summary bundle.
 \end{enumerate}
 
-\section{Evaluation}
+The compared methods are:
+\begin{itemize}
+    \item K-Means as a simple semantic baseline;
+    \item HDBSCAN on raw embeddings;
+    \item UMAP followed by HDBSCAN;
+    \item BERTopic with its default HDBSCAN-based clustering flow;
+    \item DBSCAN after UMAP with several values of $\epsilon$ and fixed \texttt{min\_samples=3}.
+\end{itemize}
 
-\subsection{Experimental Setup}
+\subsection{Qualitative Evaluation Protocol}
 
-All experiments are conducted on the dataset described in Section~\ref{sec:data}, consisting of 32,738 Russian-language text messages extracted from a private group chat. \\
-Sentence embeddings are computed using the \texttt{paraphrase-multilingual-MiniLM-L12-v2} model from the \texttt{sentence-transformers} library. \\
-We will evaluate several clustering approaches: \\
-(i) K-Means as a baseline, \\
-(ii) HDBSCAN on raw embeddings, \\
-(iii) UMAP followed by HDBSCAN, \\
-(iv) DBSCAN as a density-based alternative with explicit control over parameters, \\
-and (v) BERTopic as a higher-level topic modeling pipeline. \\ \\
-For K-Means, multiple values of $K$ are explored to analyze the sensitivity of clustering results. \\  
-For HDBSCAN and DBSCAN, parameters controlling minimum cluster size and density thresholds are varied to study their effect on cluster formation. \\
-In the UMAP-based setup, dimensionality reduction is applied prior to clustering using default parameters of BERTopic library unless stated otherwise. \\
-To ensure comparability, all methods use the same embedding representations.
+Quantitative summaries alone are not sufficient for this task. A clustering method can produce compact clusters and still fail the actual goal if those clusters correspond mainly to generic conversational filler or fragmented artifacts.
 
-\subsection{Baseline Analysis}
+To address that, the public repository includes a small manual audit protocol. A sampled cluster is assigned one of four labels:
+\begin{itemize}
+    \item \texttt{phrase-like},
+    \item \texttt{topic-like},
+    \item \texttt{generic conversational},
+    \item \texttt{artifact/noise}.
+\end{itemize}
 
-As a baseline, we first evaluate the K-Means clustering on message embeddings. K-Means is a natural baseline due to its simplicity and widespread use, but its application in this setting raises an immediate difficulty: the number of clusters $K$ must be specified in advance, while the true number of recurring themes or meme-like patterns in the chat is unknown. \\
-For $K = 1000$, the expected average cluster size in a uniform partition would be approximately 33 messages, which is close to the mean cluster size observed. In this regime, clusters are often too small and fragmented to be interpreted reliably. Although some semantically similar messages are grouped together, clusters may still contain messages with noticeably different meanings, making interpretation difficult. \\
-For $K = 100$, the mean cluster size increases to approximately 327 messages, and some clusters become more interpretable. For example, one cluster primarily contains words referring to relative days (e.g., \textit{yesterday}, \textit{today}, \textit{tomorrow}), while another is centered around references to a specific person, Ivan. However, such clusters tend to reflect broad semantic themes rather than localized recurring patterns of interest. \\
-These observations suggest that K-Means is highly sensitive to the choice of $K$ and may struggle to capture dense, irregular, and locally concentrated semantic patterns in informal chat data. This motivates the use of density-based clustering methods in the following experiments.
+The purpose of this audit is not benchmark-grade evaluation. Its purpose is narrower: to inspect whether a method surfaces clusters that are plausibly useful for recurring phrase discovery.
 
-\subsection{HDBSCAN on Raw Embeddings}
+\section{Results}
 
-We next evaluate HDBSCAN directly on the raw sentence embeddings in order to test whether density-based clustering alone is sufficient to recover recurring semantic patterns in the chat. \\
-Using the default configuration (minimum cluster size = 5, cluster selection epsilon = 0), HDBSCAN labels 28,631 out of 32,738 messages as noise. Among the detected clusters, the median cluster size is 7. These results suggest that the method is highly conservative in the original embedding space and captures only a small fraction of the dataset in cluster form. \\
-Qualitative inspection shows that many clusters contain genuinely similar messages. At the same time, the clustering is often overly fragmented: repeated expressions and minor spelling variations with nearly identical meaning are not always assigned to the same cluster. For example, \textit{ahahah} and \textit{ahaha} frequently appear in different clusters despite their obvious similarity in conversational use. \\
-This behavior suggests that raw embedding space may be too sparse for reliable density estimation in this task. Since the embedding vectors are 384-dimensional, dimensionality reduction appears to be a natural next step. Therefore, the following experiment applies UMAP before HDBSCAN in order to obtain a more compact representation of local semantic neighborhoods.
+\subsection{Baseline}
 
-\subsection{Effect of Dimensionality Reduction}
+K-Means is easy to interpret as a first pass, but it mostly recovers broad semantic regions rather than tight repeated expressions. For $K=100$, the median cluster size is 264 messages and the mean cluster size is 327.38, which is far too coarse for the phrase-discovery goal. Larger values of $K$ fragment the dataset more aggressively, but still do not provide a principled notion of noise or density.
 
-In this experiment, we evaluate whether dimensionality reduction with UMAP improves HDBSCAN clustering compared to clustering on raw embeddings. The motivation is to make the local structure of the embedding space more suitable for density-based clustering.
-We use the standard UMAP configuration adopted in the BERTopic library: \texttt{n\_neighbors=15}, \texttt{n\_components=5}, \texttt{min\_dist=0.0}, and \texttt{metric='cosine'}. This setup is also convenient for later comparison with BERTopic as an integrated pipeline.
-After applying UMAP before HDBSCAN, the number of messages labeled as noise decreases to 11,318 out of 32,738. At the same time, the method produces 1,348 clusters. Compared to HDBSCAN on raw embeddings, this indicates a substantial improvement in coverage, since a much larger fraction of the dataset is assigned to clusters. However, the resulting number of clusters remains high, which suggests that the clustering is still relatively fragmented.
-A qualitative inspection of the clusters shows that many of them correspond to repeated phrases or recurring catchphrases (e.g., \textit{студия красоты}, \textit{фо вотово}), while others are organized around narrow semantic topics, such as smoking or cigarettes. This suggests that dimensionality reduction improves the ability of HDBSCAN to recover locally dense semantic patterns and repeated conversational expressions.
-At the same time, the method still does not cleanly separate recurring phrase-based patterns from broader thematic groupings. These observations motivate two further directions: evaluating BERTopic as a higher-level pipeline built on the same components, and testing DBSCAN with explicit control over the neighborhood radius under the hypothesis that repeated catchphrases form tighter clusters than broader topic-based groups.
+\subsection{Density-Based Methods}
 
-\subsection{BERTopic}
+HDBSCAN on raw embeddings is too conservative for this dataset. It labels 28{,}631 of 32{,}738 messages as noise, while the median non-noise cluster size is only 7. This suggests that the original 384-dimensional embedding space is too sparse for stable density estimation.
 
-We next evaluate BERTopic as a higher-level pipeline built on top of UMAP and HDBSCAN, with the additional advantage of automatic topic representation and labeling. The goal of this experiment is to determine whether such an integrated framework improves the interpretability or quality of the discovered clusters compared to the manually constructed UMAP + HDBSCAN setup.
-For this experiment, we used the default HDBSCAN settings together with the standard UMAP configuration adopted by BERTopic. The resulting clustering structure is only slightly different from the previous setup. In particular, the median cluster size increases from 10 to 11, while the number of clusters increases from 1,348 to 1,417. These differences are small and may be explained by stochastic components or pipeline implementation details.
-Overall, BERTopic does not substantially change the clustering behavior compared to the direct UMAP + HDBSCAN configuration. Its main advantage lies in the convenience of an integrated workflow and automatic topic labeling, rather than in a clearer recovery of the specific recurring patterns of interest. In particular, the number of clusters remains too high to isolate the narrow meme-like trends and repeated catchphrases that motivate this work.
-This suggests that the overall pipeline still groups many semantically narrow but distinct patterns separately. To address this, the next experiment evaluates DBSCAN with explicit control over the neighborhood radius. Under the hypothesis that repeated catchphrases occupy very tight regions in the embedding space, a small $\epsilon$ may help recover more specific and focused patterns.
+Applying UMAP before HDBSCAN changes the picture considerably. Noise drops to 9{,}961 messages and the method discovers 1{,}378 clusters with median size 10. The improvement is substantial, but fragmentation remains visible: many narrow conversational patterns are still split into separate micro-clusters.
 
-\subsection{DBSCAN as a More Controllable Alternative}
+BERTopic behaves similarly to UMAP + HDBSCAN in this setting. In the current run it produces 1{,}438 clusters, labels 10{,}549 messages as noise, and keeps the median non-noise cluster size at 10. Its main advantage is convenience and inspectability rather than a strong change in clustering quality. It is therefore helpful as an analysis wrapper, but not a decisive modeling improvement by itself.
 
-We next evaluate DBSCAN as a more controllable alternative to HDBSCAN by explicitly varying the neighborhood radius $\epsilon$. The goal of this experiment is to test the hypothesis that repeated catchphrases and meme-like patterns occupy tighter regions in embedding space than broader thematic groups. \\
-We first consider $\epsilon = 0.01$. In this setting, the number of clusters decreases from 1,417 (in BERTopic) to 954, while the median cluster size drops to 5. This suggests that the clustering shifts toward more localized and specific patterns rather than broad semantic themes, although some fragmentation remains. A manual inspection of representative messages from the clusters shows that many of them correspond to recurring expressions and conversational patterns of interest. Roughly 10--15\% of the clusters appear to represent such patterns. \\
-For $\epsilon = 0.005$, the number of clusters decreases further to 602, and the median cluster size becomes 4, only slightly above the minimum cluster size. Based on manual inspection, approximately 18\% of the clusters correspond to repeated patterns of interest. The remaining clusters mostly fall into two categories. First, some clusters capture highly specific discussion topics from the chat and therefore provide useful insight into conversational structure. Second, other clusters correspond to common conversational phrases such as ``What's up, guys?'' or ``That's not true.'' Although these are not the main target of this work, they still reflect recurring linguistic behavior in the chat. \\
-Finally, for $\epsilon = 0.001$, the neighborhood radius becomes too restrictive. In this case, only 175 clusters remain, with a median cluster size of 5. Most of these clusters correspond to very common short expressions sent as standalone messages, such as laughter or brief emotional reactions. While these clusters are highly compact, they are often too trivial to capture the broader recurring patterns of interest. \\
+DBSCAN after UMAP gives the most useful control over cluster granularity. The effect of $\epsilon$ is summarized in Table~\ref{tab:dbscan}.
+
 \begin{table}[h]
 \centering
 \begin{tabular}{lccc}
-\hline
-$\epsilon$ & \# of Cl. & Median Cl. Size & Observation \\
-\hline
-0.01  & 954 & 5 & More localized clusters, some thematic grouping \\
-0.005 & 602 & 4 & Best trade-off between specificity and interpretability \\
-0.001 & 175 & 5 & Overly restrictive, dominated by trivial expressions \\
-\hline
+\toprule
+$\epsilon$ & \# Clusters & Median Size & Main Behavior \\
+\midrule
+0.01  & 953 & 5 & more localized, still partly thematic \\
+0.005 & 602 & 4 & best trade-off for phrase discovery \\
+0.001 & 175 & 5 & overly strict, dominated by trivial reactions \\
+\bottomrule
 \end{tabular}
-\caption{Effect of $\epsilon$ on DBSCAN clustering behavior}
-\label{tab:dbscan_epsilon}
-\end{table} \\
-Overall, these results suggest that DBSCAN provides more direct control over the granularity of the clustering than HDBSCAN. Moderate values of $\epsilon$ offer the best trade-off between specificity and interpretability: larger values still allow broader topic-based groupings, while very small values isolate only trivial repeated expressions. This supports the hypothesis that recurring catchphrases form tight local neighborhoods in embedding space, but that overly restrictive density thresholds may over-fragment the data.
+\caption{DBSCAN behavior after UMAP dimensionality reduction.}
+\label{tab:dbscan}
+\end{table}
 
+The interpretation is straightforward: larger neighborhoods keep more thematic content together, while smaller neighborhoods isolate only the most compact repeated expressions. In the current experiments, $\epsilon = 0.005$ is the most convincing balance between specificity and interpretability.
+
+\section{Discussion}
+
+The strongest repository-level conclusion is not that one method ``solves'' recurring content discovery, but that the geometry of the representation space determines whether density-based clustering is even viable. Raw sentence embeddings are too sparse for this task. UMAP helps. DBSCAN then exposes a practically useful granularity knob that HDBSCAN alone does not provide as clearly.
+
+At the same time, the experiments also show a more sobering point: many recovered clusters are neither canonical topics nor clean meme phrases. They often sit somewhere in between. That ambiguity is not a weakness of documentation; it is one of the main empirical findings of the project.
+
+\section{Limitations and Ethics}
+
+This project has four major limitations.
+
+First, the dataset is private and small in the sense of conversational diversity, even if it is reasonably large in message count. Claims should therefore be read as a case study, not as a general benchmark conclusion.
+
+Second, the evaluation remains partly qualitative. The repository improves this with a transparent audit protocol, but it still does not replace a large-scale labeled benchmark.
+
+Third, the current preprocessing rule removes short messages below six characters. This likely discards some real recurring signals such as short laughter variants or reaction phrases.
+
+Fourth, temporal trend modeling is intentionally left as future work. The current repository can identify recurring local structure, but it does not yet provide a robust notion of emergence, decay, or burstiness over time.
+
+On the ethics side, the public release is designed to avoid exposing private conversation content. No raw export, user identifiers, or direct quotations are needed to understand the method or its limitations.
+
+\section{Reproducibility}
+
+The root repository now exposes a single canonical CLI pipeline and a code-only public artifact set. A user with local access to the private Telegram export can reproduce the experiment summaries via:
+\begin{verbatim}
+python main.py preprocess
+python main.py baseline
+python main.py density
+python main.py report
+\end{verbatim}
+
+The public-facing reader, by contrast, can inspect the repository through the sanitized summary files and the portfolio note without needing access to any private chat data.
 
 \bibliography{egbib}
 \end{document}
