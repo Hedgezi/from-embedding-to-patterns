@@ -17,15 +17,14 @@ Short informal chat messages are noisy, multilingual, often misspelled, and full
 
 ## What is included?
 
-- a canonical CLI pipeline in [main.py](C:/Users/nikol/Documents/chat_analysis/main.py) with four entrypoints:
+- a canonical CLI pipeline in main.py with four entrypoints:
   - `preprocess`
   - `baseline`
   - `density`
   - `report`
-- reusable data-loading and summarization helpers in [utils.py](C:/Users/nikol/Documents/chat_analysis/utils.py)
-- a compact paper-style note in [report/bmvc_final.tex](C:/Users/nikol/Documents/chat_analysis/report/bmvc_final.tex)
-- sanitized public artifacts in [public_results/](C:/Users/nikol/Documents/chat_analysis/public_results)
-- archived exploratory notebooks in [legacy_notebooks/](C:/Users/nikol/Documents/chat_analysis/legacy_notebooks)
+- reusable data-loading and summarization helpers in [utils.py](./utils.py)
+- a compact paper-style note in [report/bmvc_final.tex](./report/bmvc_final.tex)
+- sanitized experiment summary in [experiment_summary.json](./experiment_summary.json).
 
 ## Main findings
 
@@ -35,7 +34,7 @@ Short informal chat messages are noisy, multilingual, often misspelled, and full
 - `BERTopic` makes inspection easier, but does not fundamentally change the clustering behavior.
 - `DBSCAN` after UMAP gives the strongest control over granularity and is the most useful setup for isolating tight recurring expressions.
 
-The public summary used in the note is available in [public_results/experiment_summary.json](C:/Users/nikol/Documents/chat_analysis/public_results/experiment_summary.json).
+The public summary used in the note is available in [experiment_summary.json](./experiment_summary.json).
 
 ## Limitations
 
@@ -48,7 +47,7 @@ The public summary used in the note is available in [public_results/experiment_s
 
 This public repository is `code only`. The original Telegram export, media files, user identifiers, and raw message excerpts should stay private.
 
-Expected private input layout is documented in [data/README.md](C:/Users/nikol/Documents/chat_analysis/data/README.md). By default, private inputs and generated caches live under ignored paths such as `data/` and `artifacts/private/`.
+Expected private input layout is documented in [data/README.md](./data/README.md). By default, private inputs and generated caches live under ignored paths such as `data/` and `artifacts/private/`.
 
 ## Setup
 
@@ -88,16 +87,3 @@ The `report` command writes:
 
 - `dataset_summary.json`
 - `experiment_summary.json`
-
-## Read the project without private data
-
-Start here:
-
-- [public_results/README.md](C:/Users/nikol/Documents/chat_analysis/public_results/README.md)
-- [public_results/experiment_summary.json](C:/Users/nikol/Documents/chat_analysis/public_results/experiment_summary.json)
-- [report/bmvc_final.tex](C:/Users/nikol/Documents/chat_analysis/report/bmvc_final.tex)
-
-And the two public figures:
-
-![Method comparison](C:/Users/nikol/Documents/chat_analysis/report/figures/method_comparison.svg)
-![DBSCAN tradeoff](C:/Users/nikol/Documents/chat_analysis/report/figures/dbscan_tradeoff.svg)
